@@ -10,8 +10,7 @@
  */
 function isEven(int $value)
 {
-    // Допишите реализацию функции здесь
-    return;
+    return $value % 2 == 0;
 }
 
 /**
@@ -29,8 +28,8 @@ function isEven(int $value)
 function appleDivision(int $countStudents, int $countApples)
 {
     // Измените код функции
-    $studentApples = null;  // Кол-во яблок для каждого школьника
-    $applesLeft = null;     // Кол-во яблок, оставшиеся в корзинке
+    $studentApples = intdiv($countApples, $countStudents);  // Кол-во яблок для каждого школьника
+    $applesLeft = $countApples % $countStudents;     // Кол-во яблок, оставшиеся в корзинке
     return [$studentApples, $applesLeft];
 }
 
@@ -49,8 +48,17 @@ function appleDivision(int $countStudents, int $countApples)
  */
 function solveQuadraticEquation(float $a, float $b, float $c)
 {
-    // Допишите реализацию функции здесь
-    return;
+    $D = $b * $b - 4 * $a * $c;
+	
+	if ($D < 0) {
+		return [];
+	}
+	elseif ($D == 0) {
+		return [(-$b) / (2 * $a)];
+	}
+	elseif($D > 0) {
+		return [(-$b + sqrt($D)) / (2 * $a), (-$b - sqrt($D)) / (2 * $a)];
+	}
 }
 
 
@@ -65,8 +73,13 @@ function solveQuadraticEquation(float $a, float $b, float $c)
  */
 function digitsSum(int $number)
 {
-    // Допишите реализацию функции здесь
-    return;
+	$number = abs($number);
+	$answer = 0;
+    while($number > 0) {
+		$answer += $number % 10;
+		$number = intdiv($number, 10);
+	}
+    return $answer;
 }
 
 
@@ -77,4 +90,3 @@ function digitsSum(int $number)
 //var_dump(appleDivision(6, 50));   // [8, 2]
 //var_dump(solveQuadraticEquation(2, 4, 2));     // [-1.0]
 //var_dump(digitsSum(1234));     // 10
-?>
