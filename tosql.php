@@ -1,7 +1,8 @@
+<!DOCTYPE html>
 <html>
 <body><?php
 
-$link = msqli_connect("localhost", "root", "");
+$link = msqli_connect("localhost", "kdadev", "password", "kdadevflowers");
 
 if($link === false || !isset($_POST) {
 	print("Ошибка. Данные не загружены.");
