@@ -1,0 +1,29 @@
+img {
+	width: 200px;
+	height: 200px;
+	border: 4px ridge black;
+}
+table {
+	text-align: center;
+	margin: auto;
+	width: 416px;
+}
+.myform {
+	border: 2px dashed black;
+	padding: 5px;
+	background-color: white;
+}
+input {
+	width: 300px;
+	height: 30px;
+}
+body {
+	background-color: #00FFFF;
+}
+.storename {
+	font-family: fantasy;
+	font-style: italic;
+	font-size: xx-large;
+	color: #FFC0CB;
+	text-shadow: 1px 1px 2px black;
+}
