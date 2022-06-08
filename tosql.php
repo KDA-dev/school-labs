@@ -1,11 +1,9 @@
-<!DOCTYPE html>
-<html>
-<body><?php
+<?php
 
 $link = msqli_connect("localhost", "kdadev", "password", "kdadevflowers");
 
 if($link === false || !isset($_POST) {
-	print("Ошибка. Данные не загружены.");
+	echo "<script> alert('Ошибка. Данные не загружены.'); window.location.assign('webpage.html');</script>";
 }
 else {
 	mysqli_set_charset($link, "utf8");
@@ -17,13 +15,10 @@ else {
 	$sql = "INSERT INTO contact SET name = " . $name . ", surname = " . $surname . ", phone = " . $phone . ", email = " . $email;
 	$result = msqli_query($link, $sql);
 	if($result === false) {
-		print("Ошибка. Данные не загружены.");
+		echo "<script> alert('Ошибка. Данные не загружены.'); window.location.assign('webpage.html');</script>";
 	}
 	else {
-		print("Данные успешно загружены.");
+		echo "<script> alert('Данные успешно загружены.'); window.location.assign('webpage.html');</script>";
 	}
 }
-?><br><br>
-<a href="https://kda-dev.github.io/school-labs/webpage.html">Вернуться</a>
-</body>
-</html>
+   ?>
