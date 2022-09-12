@@ -56,7 +56,13 @@ bool are_multiplications_equal(int mul1_factor1, int mul1_factor2, int mul2_fact
     return mul1_factor1 / mul2_factor2 == mul2_factor1 / mul1_factor2 && equal_remainders;
 }
 
- 
+bool sum_equal_to(int summand1, int summand2, int sum_query) {
+    if(summand1 >=0 && summand2 <=0 || summand1 <=0 && summand2 >= 0)
+        return summand1 + summand2 == sum_query;
+    if(summand1 >=0 && sum_query <=0 || summand1 <=0 && sum_query >= 0)
+        return false;
+    return sum_query - summand1 == summand2;
+}
 
 int main() {
     //ios_base::sync_with_stdio(false);
