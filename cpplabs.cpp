@@ -6,12 +6,13 @@
 #include<string>
 #include<set>
 #include<queue>
+#include<numeric>
 #include<algorithm>
 using namespace std;
 typedef long long ll;
 #define mp make_pair
 //const int INF = 2e9 + 9;
-#define _DEBUGs
+#define _DEBUG
 
 struct point {
     double x, y;
@@ -75,6 +76,19 @@ double polygon_area(vector<point>& vertices) {
         ans += triangle_area(vertices[0], vertices[i - 1], vertices[i]);
     }
     return ans;
+}
+
+int proportional_diophantine_triangles_amnt(point right_angle_point, point x_perpendicular_point, 
+    point y_perpendicular_point) {
+    
+    int triangle_width = round((right_angle_point - x_perpendicular_point).len());
+    int triangle_height = round((right_angle_point - y_perpendicular_point).len());
+
+    return gcd(triangle_width, triangle_height) + 1;
+    //all those triangles will be proportional to one another
+    //thus, the gcd will find us the amound of proportional triangles with int sides (plus the original one)
+    //this is equivalent to the amount of the int points on the triangle's hypothenuse
+    //and since the hypothenuse's length is wholly defined by the other two, we needn't even consider it
 }
 
 int main() {
