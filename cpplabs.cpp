@@ -14,6 +14,8 @@ typedef long long ll;
 //const int INF = 2e9 + 9;
 #define _DEBUG
 
+double eps = 1e-7;
+
 struct point {
     double x, y;
 
@@ -26,70 +28,92 @@ struct point {
     point operator*(const int &other) const {
         return { x * other, y * other };
     }
-    const double len() {
+    point operator/(const int &other) const {
+        return { x / other, y / other };
+    }
+    double operator*(const point &other) const {
+        return x * other.x + y * other.y;
+    }
+    double operator^(const point &other) const {
+        return x * other.y - other.x * y;
+    }
+    double len() const {
         return sqrt(x * x + y * y);
     }
-};
-
-struct circle {
-    point center;
-    double radius;
-};
-
-double triangle_area(point p1, point p2, point p3) {
-    double seg_len1 = (p1 - p2).len(), seg_len2 = (p2 - p3).len(), seg_len3 = (p1 - p3).len();
-
-    double hp = (seg_len1 + seg_len2 + seg_len3) / 2;
-    return sqrt(hp * (hp - seg_len1) * (hp - seg_len2) * (hp - seg_len3));
-}
-
-double polygon_perimeter(vector<point> &vertices) {
-    double ans = (vertices[0] - vertices[vertices.size()]).len();
-    for (int i = 1; i < vertices.size(); i++) {
-        ans += (vertices[i - 1] - vertices[i]).len();
+    point norm() const {
+        return {x / len(), y / len()};
     }
-    return ans;
-}
-
-point bisector(point vertex, point side1, point side2) {
-    point vector1 = side1 - vertex;
-    point vector2 = side2 - vertex;
-    return vector1 * vector2.len() + vector2 * vector1.len();
-}
-
-enum class overlap_status {
-    INTERSECT, TOUCH, SEPARATE
 };
 
-overlap_status circles_overlap(circle a, circle b) {
-    double distance_indicator = (a.center - b.center).len() - a.radius - b.radius;
-    if (distance_indicator > 0)
-        return overlap_status::SEPARATE;
-    if (distance_indicator < 0)
-        return overlap_status::INTERSECT;
-    return overlap_status::TOUCH;
+struct line_segment {
+    point a, b;
+};
+
+double oriented_triangle_area(point p1, point p2, point p3) {
+    return ((p2 - p1) ^ (p3 - p2)) / 2.;
 }
 
-double polygon_area(vector<point>& vertices) {
-    double ans = 0;
-    for (int i = 2; i < vertices.size(); i++) {
-        ans += triangle_area(vertices[0], vertices[i - 1], vertices[i]);
+bool lines_intersect(line_segment l1, line_segment l2) { // line is defined by a segment on it
+    return oriented_triangle_area(l1.a, l1.b, l2.a) * oriented_triangle_area(l1.a, l1.b, l2.b) <= 0
+    && oriented_triangle_area(l2.a, l2.b, l1.a) * oriented_triangle_area(l2.a, l2.b, l1.b) <= 0;
+}
+bool bounding_box_check(line_segment s1, line_segment s2) {
+    return max(min(s1.a.x, s1.b.x), min(s2.a.x, s2.b.x)) <= min(max(s1.a.x, s1.b.x), max(s2.a.x, s2.b.x))
+        && max(min(s1.a.y, s1.b.y), min(s2.a.y, s2.b.y)) <= min(max(s1.a.y, s1.b.y), max(s2.a.y, s2.b.y));
+}
+
+bool line_segments_intersect(line_segment s1, line_segment s2) {
+    return lines_intersect(s1, s2) && bounding_box_check(s1, s2);
+}
+bool segment_ray_intersect(line_segment s, point ray_start, point ray_dir) {
+    double max_distance_to_intersection_point = max((s.a - ray_start).len(), (s.b - ray_start).len());
+    return line_segments_intersect(s, {ray_start, ray_start + ray_dir.norm() * max_distance_to_intersection_point * 2});
+}
+
+bool is_point_in_polygon(point p, const vector<point> &polygon) {
+    point ray_dir = {1, 1};
+    int intersection_cnt = 0;
+    for(int i = 0; i < polygon.size() - 1; i++) {
+        double seglen_reduced = (polygon[i + 1] - polygon[i]).len() - eps;
+        point open_segment_point = polygon[i] + (polygon[i + 1] - polygon[i]).norm() * seglen_reduced;
+        //This essentially removes the segment's second point, preventing cases where
+        //the same point is counted twice 
+        if(segment_ray_intersect({polygon[i], open_segment_point}, p, ray_dir))
+            intersection_cnt++;
     }
-    return ans;
+    return intersection_cnt % 2 != 0;
 }
 
-int proportional_diophantine_triangles_amnt(point right_angle_point, point x_perpendicular_point, 
-    point y_perpendicular_point) {
-    
-    int triangle_width = round((right_angle_point - x_perpendicular_point).len());
-    int triangle_height = round((right_angle_point - y_perpendicular_point).len());
+struct rectangle {
+    point a, b;
+    rectangle norm() const {
+        return {{min(a.x, b.x), min(a.y, b.y)}, {max(a.x, b.x), max(a.y, b.y)}};
+    }
+    double area() const {
+        return (norm().b.x - norm().a.x) * (norm().b.y - norm().a.y);
+    }
+    rectangle overlap(const rectangle &other) const {
+        point anew = {max(norm().a.x, other.norm().a.x), max(norm().a.y, other.norm().a.y)};
+        point bnew = {min(norm().b.x, other.norm().b.x), min(norm().b.y, other.norm().b.y)};
+        return {anew, bnew};
+    }
+};
 
-    return gcd(triangle_width, triangle_height) + 1;
-    //all those triangles will be proportional to one another
-    //thus, the gcd will find us the amound of proportional triangles with int sides (plus the original one)
-    //this is equivalent to the amount of the int points on the triangle's hypothenuse
-    //and since the hypothenuse's length is wholly defined by the other two, we needn't even consider it
+double multiple_rectangles_area_overlap(const vector<rectangle> &rs) {
+    rectangle cur = rs[0];
+    for(int i = 1; i < rs.size(); i++) {
+        cur = cur.overlap(rs[i]);
+        if(cur.a.x >= cur.b.x || cur.a.y >= cur.b.y)
+            return 0;
+    }
+    return cur.area();
 }
+double multiple_rectangles_area_union(const vector<rectangle> &rs) {
+    // I'm
+    // I'm not writing a scanline for this
+    return 0;
+}
+
 
 int main() {
     //ios_base::sync_with_stdio(false);
