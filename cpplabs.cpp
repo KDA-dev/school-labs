@@ -114,6 +114,74 @@ double multiple_rectangles_area_union(const vector<rectangle> &rs) {
     return 0;
 }
 
+template<typename T>
+int findElement(const T& elem, const vector<T>& vec) {
+    for (int i = 0; i < vec.size(); i++)
+        if (elem == vec[i]) // ...C++ cares about safety about as much as a kid sticking his hand into a power socket, huh
+            return i;
+    return -1; //was not found
+}
+
+template<typename T>
+int findElementPair(const vector<T>& vec, function<bool(T, T)> equals) {
+    for (int i = 0; i < vec.size() - 1; i++)
+        if (equals(vec[i + 1], vec[i]))
+            return i;
+    return -1; //was not found
+}
+
+enum sort_status {INCREASING, DECREASING, STATIC, UNSORTED};
+
+template<typename T>
+sort_status isSorted(const vector<T>& vec) {
+    bool increasing = true, decreasing = true;
+
+    for (int i = 0; i < vec.size(); i++)
+        if (v[i + 1] < v[i])
+            increasing = false;
+    for (int i = 0; i < vec.size(); i++)
+        if (v[i] < v[i + 1])
+            decreasing = false;
+
+    if (increasing && decreasing)
+        return STATIC;
+    else if (increasing)
+        return INCREASING;
+    else if (decreasing)
+        return DECREASING;
+    else
+        return UNSORTED;
+}
+
+template<typename T>
+bool isSorted(const vector<T>& vec, function<bool(T, T)> partial_order_comp) {
+    bool increasing = true, decreasing = true;
+
+    for (int i = 0; i < vec.size(); i++)
+        if (!partial_order_comp(v[i], v[i + 1]))
+            increasing = false;
+    for (int i = 0; i < vec.size(); i++)
+        if (!partial_order_comp(v[i + 1], v[i]))
+            decreasing = false;
+
+    if (increasing && decreasing)
+        return STATIC;
+    else if (increasing)
+        return INCREASING;
+    else if (decreasing)
+        return DECREASING;
+    else
+        return UNSORTED;
+}
+
+template<typename T>
+int countElement(T* data, int data_size, const T &elem) {
+    int cnt = 0;
+    for (T* pointer = data, *data_end = data + data_size; p < data_end; p++)
+        if (elem == *p) // ...C++ cares about safety about as much as a kid sticking his hand into a power socket, huh
+            ++cnt;
+    return cnt;
+}
 
 int main() {
     //ios_base::sync_with_stdio(false);
