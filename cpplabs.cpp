@@ -8,6 +8,8 @@
 #include<queue>
 #include<numeric>
 #include<algorithm>
+#include<functional>
+#include<random>
 using namespace std;
 typedef long long ll;
 #define mp make_pair
@@ -49,8 +51,24 @@ struct line_segment {
     point a, b;
 };
 
+int integer_pts_on_segment(point p1, point p2) {
+
+    int triangle_width = round(abs(p1.x - p2.x));
+    int triangle_height = round(abs(p1.y - p2.y));
+
+    return gcd(triangle_width, triangle_height) + 1;
+}
+
 double oriented_triangle_area(point p1, point p2, point p3) {
     return ((p2 - p1) ^ (p3 - p2)) / 2.;
+}
+
+double polygon_area(const vector<point>& vertices) {
+    double ans = 0;
+    for (int i = 2; i < vertices.size(); i++) {
+        ans += oriented_triangle_area(vertices[0], vertices[i - 1], vertices[i]);
+    }
+    return ans;
 }
 
 bool lines_intersect(line_segment l1, line_segment l2) { // line is defined by a segment on it
@@ -108,11 +126,7 @@ double multiple_rectangles_area_overlap(const vector<rectangle> &rs) {
     }
     return cur.area();
 }
-double multiple_rectangles_area_union(const vector<rectangle> &rs) {
-    // I'm
-    // I'm not writing a scanline for this
-    return 0;
-}
+
 
 template<typename T>
 int findElement(const T& elem, const vector<T>& vec) {
@@ -181,6 +195,63 @@ int countElement(T* data, int data_size, const T &elem) {
         if (elem == *p) // ...C++ cares about safety about as much as a kid sticking his hand into a power socket, huh
             ++cnt;
     return cnt;
+}
+
+template<typename T>
+bool isVecPermutationOfOther(const vector<T> &vec, const vector<T> &other) {
+    if(vec.size() != other.size())
+        return false;
+    vector<bool> foundElems(vec.size(), false);
+    for(int i = 0; i < vec.size(); i++) {
+        bool elem_found = false;
+        for(int j = 0; j < other.size(); j++) {
+            if(foundElems[i])
+                continue;
+            if(vec[i] == other[j]) {
+                elem_found = true;
+                foundElems[j] = true;
+                break;
+            }
+        }
+        if(!elem_found)
+            return false;
+    }
+    return true;
+}
+
+int integer_pts_in_polygon(const vector<point> &polygon) {
+    int boundary_ints = integer_pts_on_segment(polygon.back(), polygon[0]);
+    for(int j = 1; j < polygon.size(); j++)
+        boundary_ints += integer_pts_on_segment(polygon[j - 1], polygon[j]) - 1;
+    
+    int area_twice = round(polygon_area(polygon) * 2);
+
+    return (area_twice - boundary_ints + 2) / 2;
+    //pick's theorem
+}
+
+bool point_in_rectangle(const point &p, const rectangle &r) {
+    return p.x <= r.norm().b.x && p.x >= r.norm().a.x && p.y <= r.norm().b.y && p.y >= r.norm().a.y;
+}
+
+double inexact_multiple_rectangles_area_union(const vector<rectangle> &rs) {
+    point min_bound = rs[0].a, max_bound = rs[0].a;
+    for(int i = 0; i < rs.size(); i++) {
+        min_bound.x = min(min_bound.x, min(rs[i].a.x, rs[i].b.x));
+        min_bound.y = min(min_bound.y, min(rs[i].a.y, rs[i].b.y));
+        max_bound.x = max(max_bound.x, max(rs[i].a.x, rs[i].b.x));
+        max_bound.y = max(max_bound.y, max(rs[i].a.y, rs[i].b.y));
+    }
+    mt19937 engine;
+    uniform_real_distribution uni(0., 1.);
+
+    double xlen = max_bound.x - min_bound.x, ylen = max_bound.y - min_bound.y;
+    double in_cnt = 0;
+
+    for(int i = 0; i < 100000; i++) {
+        point d = {uni(engine) * xlen, uni(engine) * ylen};
+        if(point_in_rectangle())
+    }
 }
 
 int main() {
