@@ -122,13 +122,13 @@ stackc<T>::~stackc() {
 
 template<typename T>
 void stackc<T>::push(const T& elem) {
-    node* new_node = new node{ elem, top };
+    topnode = new node{ elem, topnode };
     ++count;
 }
 
 template<typename T>
 void stackc<T>::push(T&& elem) {
-    node* new_node = new node{ elem, top };
+    topnode = new node{ elem, topnode };
     ++count;
 }
 
@@ -155,16 +155,39 @@ size_t stackc<T>::size() const {
     return count;
 }
 
+template<typename T>
+bool isVecPermutationOfOther(const vector<T> &vec, const vector<T> &other) {
+    if(vec.size() != other.size())
+        return false;
+    vector<bool> foundElems(vec.size(), false);
+    for(int i = 0; i < vec.size(); i++) {
+        bool elem_found = false;
+        for(int j = 0; j < other.size(); j++) {
+            if(foundElems[i])
+                continue;
+            if(vec[i] == other[j]) {
+                elem_found = true;
+                foundElems[j] = true;
+                break;
+            }
+        }
+        if(!elem_found)
+            return false;
+    }
+    return true;
+}
+
 bool is_bracket_sequence_balanced(const string& seq) {
     stackm<char> st;
-    map<char, char> ctrpart = { { '(', ')'}, { '[', ']'}, { '{', '}'} };
+    string op_br = "{[(<", cl_br = "}])>";
     for (int i = 0; i < seq.size(); i++) {
-        if (ctrpart.count(seq[i]) != 0) {
+        auto idx = op_br.find(seq[i]);
+        if (idx != string::npos) {
             st.push(seq[i]);
         }
         else {
-            char c = st.top();
-            if (ctrpart[st.top()] == seq[i])
+            idx = cl_br.find(seq[i]);
+            if (st.size() != 0 && op_br[idx] == st.top())
                 st.pop();
             else
                 return false;
@@ -215,6 +238,83 @@ vector<int> find_euler_path(vector<vector<pair<int, int>>>& G, int edge_cnt) {
     return ans;
 }
 
+typedef vector<vector<int>> Graph;
+
+// Вершины графа должны быть занумерованы одинаково, иначе NP
+bool is_graph_same_as_another(const Graph& g, const Graph& another) {
+    if(g.size() != another.size())
+        return false;
+    for(int i = 0; i < g.size(); i++)
+        if(!isVecPermutationOfOther(g[i], another[i]))
+            return false;
+    return true;
+}
+bool is_graph_subset_of_another(Graph& g, Graph& another) {
+    if(g.size() > another.size())
+        return false;
+    for(int i = 0; i < g.size(); i++) {
+        sort(g[i].begin(),g[i].end());
+        sort(another[i].begin(), another[i].end());
+        if(!does_vector_contain_another(another[i], g[i]))
+            return false;
+    }
+    return true;
+}
+
+int find_only_nonsequence_bracket(const string& seq) {
+    stackm<pair<char, int>> st;
+    string op_br = "{[(<", cl_br = "}])>";
+    int sus1 = -1, sus2 = -1;
+    for (int i = 0; i < seq.size(); i++) {
+        auto idx = op_br.find(seq[i]);
+        if (idx != string::npos) {
+            st.push(mp(seq[i], idx));
+        }
+        else {
+            idx = cl_br.find(seq[i]);
+            if (st.size() != 0 && op_br[idx] == st.top().first)
+                st.pop();
+            else if(sus1 == -1) {
+                sus1 = st.top().second;
+                sus2 = i;
+                --i;
+            }
+            else
+                return sus2;
+        }
+    }
+    if(sus1 == -1)
+        return st.top().second;
+    if(st.size() != 0)
+        return sus2;
+    return sus1;
+}
+
+template<typename T>
+void sort_stack(stackm<T>& st) {
+    stackm<T> sec, buffer;
+    while (st.size() != 0)
+    {
+        while (sec.size() != 0 && sec.top() > st.top())
+        {
+            buffer.push(sec.top());
+            sec.pop();
+        }
+        sec.push(st.top());
+        st.pop();
+        while (buffer.size() != 0)
+        {
+            sec.push(buffer.top());
+            buffer.pop();
+        }
+    }
+    while (sec.size() != 0)
+    {
+        st.push(sec.top());
+        sec.pop();
+    }
+} 
+
 int main() {
     ios_base::sync_with_stdio(false);
     cin.tie(0);
@@ -223,6 +323,19 @@ int main() {
     freopen("output.txt", "w", stdout);
 #endif
 
-    cout << (is_bracket_sequence_balanced("([()()]())") ? "YES\n" : "NO\n");
+    cout << find_only_nonsequence_bracket("([()()}]())") << '\n';
     cout << (does_vector_contain_another<int>({ 1, 2, 3, 4, 5, 6 }, { 1, 3, 5 }) ? "YES\n" : "NO\n");
+
+    stackm<int> st;
+    st.push(1);
+    st.push(4);
+    st.push(5);
+    st.push(2);
+    sort_stack(st);
+    while (st.size() != 0)
+    {
+        cout << st.top() << ' ';
+        st.pop();
+    }
+    cout << '\n';
 }
