@@ -33,26 +33,35 @@ Point grad_10(const Point& p) {
     return { x1, x2 };
 }
 
-const double eps = 0.01, gamma = 0.5, theta = 0.5, alph = 0.1;
+const double eps = 0.01, gamma = 0.5, theta = 0.5, alph = 0.1, dif = 0.002;
+
+double dichotomy(double lb, double rb, function<double(double)> f) {
+    while (rb - lb > eps) {
+        double mb1 = lb + (rb - lb) / 2 - dif, mb2 = lb + (rb - lb) / 2 + dif;
+        if (f(mb1) <= f(mb2))
+            rb = mb2;
+        else
+            lb = mb1;
+    }
+    return lb + (rb - lb) / 2;
+}
 
 Point gradmethod(const Point& start, function<double(Point)> f, function<Point(Point)> grad) {
     Point xk = start;
-   // int k = 1;
+    int k = 0;
     while (true) {
-        double ak = alph;
         Point gxk = grad(xk);
         if (gxk.selfdot() <= eps)
             break;
-        while (f(xk - gxk * ak) - f(xk) > -1 * gamma * ak * gxk.selfdot()) {
 
-            cout << xk.x << ' ' << xk.y << " | " << gxk.x << ' ' << gxk.y << " | " <<f(xk - gxk * ak) << ' ' << f(xk) << ' ' << -1 * gamma * ak * gxk.selfdot() << '\n';
-           
-            ak *= theta;
-        } 
-        cout << ak <<" " <<gxk.selfdot() << '\n';
+        double ak = dichotomy(0, alph, 
+            [xk, f, grad](double t) {
+                return f(xk - grad(xk) * t);
+            });
         xk = xk - gxk * ak;
-       // ++k;
+        k++;
     }
+    cout << k << '\n';
     return xk;
 }
 
@@ -60,6 +69,6 @@ Point gradmethod(const Point& start, function<double(Point)> f, function<Point(P
 
 int main()
 {
-    auto ans = gradmethod({0, 0}, f_10, grad_10);
+    auto ans = gradmethod({ 0, 0 }, f_10, grad_10);
     cout << ans.x << ' ' << ans.y;
 }
