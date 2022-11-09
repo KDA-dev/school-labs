@@ -1,3 +1,4 @@
+#include <iostream>
 #include<iostream>
 #include<algorithm>
 #include<cmath>
@@ -6,34 +7,46 @@
 using namespace std;
 
 struct Point {
-    double x, y;
+    double x, y, z;
     double selfdot() const {
-        return x * x + y * y;
+        return *this * *this;
     }
     double len() const {
         return sqrt(selfdot());
     }
     Point operator+(const Point& other) const {
-        return { x + other.x, y + other.y };
+        return { x + other.x, y + other.y, z + other.z };
     }
     Point operator-(const Point& other) const {
-        return { x - other.x, y - other.y };
+        return { x - other.x, y - other.y, z - other.z };
     }
     Point operator*(double other) const {
-        return { x * other, y * other };
+        return { x * other, y * other, z * other };
+    }
+    double operator*(const Point& other) const {
+        return x * other.x + y * other.y + z * other.z;
+    }
+    Point operator*(const vector<Point>& matrix) const {
+        vector<double> coord;
+        for (int i = 0; i < 3; i++)
+            coord.push_back(*this * matrix[i]);
+        return { coord[0], coord[1], coord[2] };
     }
 };
 
-double f_10(const Point& p) {
-    return exp(p.x * p.x - 2 * p.x) + p.x * p.x + p.y * p.y + exp(p.y * p.y + 3 * p.y);
-}
-Point grad_10(const Point& p) {
-    double x1 = exp(p.x * p.x - 2 * p.x) * (2 * p.x - 2) + 2 * p.x;
-    double x2 = 2 * p.y + exp(p.y * p.y + 3 * p.y) * (2 * p.y + 3);
-    return { x1, x2 };
-}
+struct sqrFn {
+    vector<Point> A; // matrix
+    Point b;
+    double c;
+    double operator() (const Point& x) const {
+        return x * A * x * 0.5 + x * b + c;
+    }
+    Point grad(const Point& x) const {
+        return x * A + b;
+    }
+};
 
-const double eps = 0.01, gamma = 0.5, theta = 0.5, alph = 0.1, dif = 0.002;
+const double maxalph = 1000, eps = 0.01, dif = 0.002;
 
 double dichotomy(double lb, double rb, function<double(double)> f) {
     while (rb - lb > eps) {
@@ -46,29 +59,37 @@ double dichotomy(double lb, double rb, function<double(double)> f) {
     return lb + (rb - lb) / 2;
 }
 
-Point gradmethod(const Point& start, function<double(Point)> f, function<Point(Point)> grad) {
-    Point xk = start;
+Point FletcherReeves(const Point& start, const sqrFn& f) {
+    Point xk = start, xprev = { 1, 1, 1 }, dk = { 0, 0, 0 };
     int k = 0;
-    while (true) {
-        Point gxk = grad(xk);
-        if (gxk.selfdot() <= eps)
-            break;
+    while (f.grad(xk).len() > eps) {
+        double wprev = f.grad(xk).selfdot() / f.grad(xprev).selfdot();
+        dk = f.grad(xk) + dk * wprev;
 
-        double ak = dichotomy(0, alph, 
-            [xk, f, grad](double t) {
-                return f(xk - grad(xk) * t);
+        double ak = dichotomy(0, maxalph,
+            [&xk, &f, &dk](double t) {
+                return f(xk - dk * t);
             });
-        xk = xk - gxk * ak;
+        xprev = xk;
+        xk = xk - dk * ak;
         k++;
     }
     cout << k << '\n';
     return xk;
 }
 
-
-
 int main()
 {
-    auto ans = gradmethod({ 0, 0 }, f_10, grad_10);
-    cout << ans.x << ' ' << ans.y;
+    sqrFn f10 = {
+        {
+            {2, 1.5, 1},
+            {1.5, 2, 1},
+            {1, 1, 1}
+        },
+        {1, 2, 3},
+        1
+    };
+    auto ans = FletcherReeves({ 1, 1, 1 }, f10);
+    cout << ans.x << ' ' << ans.y << ' ' << ans.z << '\n';
+    cout << f10(ans);
 }
