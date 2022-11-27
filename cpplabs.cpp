@@ -11,11 +11,21 @@
 #include<functional>
 #include<stack>
 #include<random>
+#include<optional>
+#include <windows.h>
 using namespace std;
 typedef long long ll;
 #define mp make_pair
 //const int INF = 2e9 + 9;
 #define _DEBUG
+
+template <typename F>
+size_t exec_time(F f)
+{ 
+    auto start=GetTickCount64(); 
+    f(); 
+    return GetTickCount64()-start; 
+}
 
 int find_total_rainfall(const vector<pair<int, int>>& bricks) { // first = h, second = w
     vector<int> dist(bricks.size());
@@ -36,105 +46,135 @@ int find_total_rainfall(const vector<pair<int, int>>& bricks) { // first = h, se
     return ans;
 }
 
-class node {  
+template <typename K, typename D>
+class bst
+{
+    struct node {
+        K key;
+        D data;
+        node* left = nullptr, * right = nullptr;
+    } *root = nullptr;
+    size_t count = 0;
+    //возвращает адрес указателя, по которому должен располагаться ключ k
+    node** _find(const K& k) const;
 public:
-    node* L, *R;
-    int key, data;
-    node(int _key, int _data) {
-        L = R = nullptr;
-        key = _key;
-        data = _data;
-    }
+    bst() {};
+    ~bst() {};
+    std::optional<D> find(const K& k) const;
+    bool insert(const K& k, const D& d);
 };
 
-node* find(int key, node* start) {
-    while(start != nullptr && start->key != key) {
-        if(key < start->key)
-            start = start->L;
-        else
-            start = start->R;
-    }
-    return start;
+template<typename K, typename D>
+typename bst<K, D>::node** bst<K, D>::_find(const K& k) const
+{
+    node** p = (node**)&root;
+    while (*p && (*p)->key != k)
+        p = (*p)->key < k ? &((*p)->right) : &((*p)->left);
+    return p;
 }
-node* insert(int key, int data, node* start) {
-    node* parent = nullptr;
-    while(start != nullptr && start->key != key) {
-        parent = start;
-        if(key < start->key) 
-            start = start->L;
-        else
-            start = start->R;
+
+template<typename K, typename D>
+optional<D> bst<K, D>::find(const K& k) const
+{
+    node** p = _find(k);
+    return (*p) ? std::optional<D>((*p)->data) : std::nullopt;
+}
+
+template<typename K, typename D>
+bool bst<K, D>::insert(const K& k, const D& d)
+{
+    node** p = _find(k);
+    if (*p)
+    {
+        (*p)->data = d;
+        return false;
     }
-    if(start != nullptr) {
-        start->data = data;
-        return start;
-    }
-    else {
-        node* nd = new node(key, data);
-        if(key < parent->key)
-            parent->L = nd;
-        else
-            parent->R = nd;
-        return nd;
+    else
+    {
+        *p = new node{ k,d };
+        ++count;
+        return true;
     }
 }
 
-template<typename BidirIter, typename ValType>
-BidirIter move_to_the_end(BidirIter first, BidirIter last, ValType val) {
-    BidirIter ans = last;
-    for(; first != last; ++first) {
-        if(*first == val) {
-            ValType tmp = *last;
-            *last = *first;
-            *first = tmp;
-            ans = first;
+template<typename T>
+void transfer_top(stack<T>& from, stack<T>& to) {
+    to.push(from.top());
+    from.pop();
+}
+
+template<typename T>
+void sort_stack(stack<T>& st) {
+    stack<T> sec, buffer;
+    while (st.size() != 0)
+    {
+        while (sec.size() != 0 && sec.top() > st.top())
+        {
+            buffer.push(sec.top());
+            sec.pop();
+        }
+        sec.push(st.top());
+        st.pop();
+        while (buffer.size() != 0)
+        {
+            sec.push(buffer.top());
+            buffer.pop();
         }
     }
-    return ans;
-}
-
-template <typename BidirIter, typename ValType>
-BidirIter move_all_to_the_end(BidirIter first, BidirIter last, const ValType& val) {
-    BidirIter ans = last;
-    bool ans_found = false;
-    for(; first != last; ++first) {
-        if(*first == val) {
-            ValType tmp = *last;
-            *last = *first;
-            *first = tmp;
-            --last;
-            if(!ans_found) {
-                ans = first;
-                ans_found = true;
-            }
-        }
+    while (sec.size() != 0)
+    {
+        st.push(sec.top());
+        sec.pop();
     }
-    return ans;
 }
 
-template <typename BidirIter, typename UnaryPredicate>
-BidirIter move_if_to_the_end(BidirIter first, BidirIter last, UnaryPredicate p) {
-    BidirIter ans = last;
-    bool ans_found = false;
-    for(; first != last; ++first) {
-        if(p(*first)) {
-            swap(first, last);
-            --last;
-            if(!ans_found) {
-                ans = first;
-                ans_found = true;
-            }
-        }
+template<typename T>
+void qsort_stack(stack<T>& st) {
+    if(st.empty())
+        return;
+    stack<T> G, L, E;
+    transfer_top(st, E);
+    while(!st.empty()) {
+        if(st.top() > E.top())
+            transfer_top(st, G);
+        else if(st.top() < E.top())
+            transfer_top(st, L);
+        else
+            transfer_top(st, E);
     }
-    return ans;
+    qsort_stack(G);
+    qsort_stack(L);
+    while(!L.empty())
+        transfer_top(L, E);
+    while(!E.empty())
+        transfer_top(E, st);
+    while(!G.empty())
+        transfer_top(G, E);
+    while(!E.empty())
+        transfer_top(E, st);
 }
 
-int count_nondivisible(const vector<int>& v) {
-    return count_if(v.begin(), v.end(), [&v](int t) {
-        return none_of(v.begin(), v.end(), [t](int tt) {
-            return tt != t && t % tt == 0;
-        });
-    });
+random_device rd;
+mt19937 mt(rd());
+
+template<typename T>
+void fill_with_random(stack<T>& st, int amnt) {
+    while(!st.empty())
+        st.pop();
+    for(int i = 0; i < amnt; i++) {
+        st.push(mt());
+    }
+}
+
+void test_timing() {
+    stack<int> st;
+    for(int i = 10; i <= 50; i += 10) {
+        cout << "Using " << i << " elements:\n";
+        fill_with_random(st, i);
+        cout << "Boring sort: " << exec_time([&st]{sort_stack(st);}) << '\n';
+        fill_with_random(st, i);
+        cout << "Boring sort: " << exec_time([&st]{qsort_stack(st);}) << '\n';
+    }
 }
 
 int main() {
@@ -145,6 +185,5 @@ int main() {
     freopen("output.txt", "w", stdout);
 #endif
     
-    vector<pair<int, int>> bricks = {{5, 2}, {3, 1}, {2, 4}, {4, 2}, {3, 2}, {4, 2}, {3, 2}};
-    cout << find_total_rainfall(bricks) << endl;
+    test_timing();
 }
