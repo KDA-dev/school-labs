@@ -17,6 +17,7 @@ using namespace std;
 typedef long long ll;
 #define mp make_pair
 //const int INF = 2e9 + 9;
+#define _DEBUG
 
 template <typename K, typename D>
 class bst
@@ -42,6 +43,11 @@ public:
     size_t width() const;
     size_t height_rec() { return root ? _height_rec(root) - 1 : 0; }
     void visit(std::function<void(K, D)> worker);
+    vector<pair<K, D>>& dump();
+    void _wrapper(ostream& o) const;
+    bool is_bst_by_data() const;
+    template<typename A, typename B>
+    friend ostream& operator<<(ostream& o, const bst<A, B>& _bst);
 };
 
 template<typename K, typename D>
@@ -249,6 +255,80 @@ void bst<K, D>::visit(std::function<void(K, D)> worker) {
     }
 }
 
+template <typename K, typename D>
+vector<pair<K, D>>& bst<K, D>::dump() {
+    vector<pair<K, D>> v;
+    visit([&v](K k, D d)->void {
+        v.push_back({ k, d });
+        });
+}
+
+template <typename K, typename D>
+void bst<K, D>::_wrapper(ostream& o) const
+{
+    stack<pair<node*, size_t>> s;
+    node* cur = root;
+    size_t cur_height = 0;
+    while (s.size() || cur)
+    {
+        if (cur)
+        {
+            for (int i = 0; i < cur_height; i++)
+                o << "    ";
+            o << cur->key << ", " << cur->data << '\n';
+            if((cur->left != nullptr && cur->right == nullptr) || (cur->left == nullptr && cur->right != nullptr)) {
+                for (int i = 0; i < cur_height + 1; i++)
+                    o << "    ";
+                cout << "nil\n";
+            }
+            s.push({ cur,cur_height });
+            cur = cur->left;
+            ++cur_height;
+        }
+        else
+        {
+            cur = s.top().first->right;
+            cur_height = s.top().second + 1;
+            //delete s.top();
+            s.pop();
+        }
+    }
+}
+
+template <typename K, typename D>
+ostream& operator<<(ostream& o, const bst<K, D>& _bst) {
+    _bst._wrapper(o);
+    return o;
+}
+
+template<typename K, typename D>
+bool bst<K, D>::is_bst_by_data() const
+{
+    stack<node*> s;
+    node* cur = root;
+    bool is_bst = true;
+    while (s.size() || cur)
+    {
+        if (cur)
+        {
+            s.push(cur);
+            if(cur->left) {
+                is_bst &= cur->left->data < cur->data;
+            }
+            cur = cur->left;
+        }
+        else
+        {
+            if(s.top()->right) {
+                is_bst &= s.top()->data < s.top()->right->data;
+            }
+            cur = s.top()->right;
+            s.pop();
+        }
+    }
+    return is_bst;
+}
+
 class matrix
 {
     std::vector<std::vector<double>> m;
@@ -380,6 +460,73 @@ ostream& operator<<(ostream& o, const matrix& M) {
     return o;
 }
 
+
+typedef vector<vector<int>> graph;
+
+void bfs(const graph& G, vector<int>& dist, vector<int>& parent, int start) {
+    dist.assign(G.size(), -1);
+    parent.assign(G.size(), -1);
+    dist[start] = 0;
+    queue<int> s;
+    s.push(start);
+    while(!s.empty()) {
+        int v = s.front();
+        s.pop();
+        for(int u : G[v])
+            if(dist[u] == -1) {
+                dist[u] = dist[v] + 1;
+                parent[u] = v;
+                s.push(u);
+            }
+    }
+}
+
+void find_components(const graph& G, vector<int>& comp) {
+    comp.assign(G.size(), -1);
+    int cur_comp = 0;
+    for(int cur = 0; cur < G.size(); cur++) {
+        if(comp[cur] != -1)
+            continue;
+        comp[cur] = cur_comp++;
+        queue<int> s;
+        s.push(cur);
+        while(!s.empty()) {
+            int v = s.front();
+            s.pop();
+            for(int u : G[v]) {
+                if(comp[u] == -1) {
+                    comp[u] = comp[v];
+                    s.push(u);
+                }
+            }
+        }
+    }
+}
+
+bool check_if_twoparter(const graph& G) {
+    vector<int> partmark(G.size(), -1);
+    for(int cur = 0; cur < G.size(); cur++) {
+        if(partmark[cur] != -1)
+            continue;
+        partmark[cur] = 0;
+        queue<int> s;
+        s.push(cur);
+        while(!s.empty()) {
+            int v = s.front();
+            s.pop();
+            for(int u : G[v]) {
+                if(partmark[u] == -1) {
+                    partmark[u] = (partmark[v] + 1) % 2;
+                    s.push(u);
+                }
+                else if (partmark[u] == partmark[v])
+                    return false;
+            }
+        }
+    }
+    return true;
+}
+
 int main() {
     ios_base::sync_with_stdio(false);
     cin.tie(0);
@@ -387,7 +534,14 @@ int main() {
     freopen("input.txt", "r", stdin);
     freopen("output.txt", "w", stdout);
 #endif
-    matrix M(3);
-    M.generate([](int r, int c) -> double {return r + c + 1; });
-    cout << M.det();
+    bst<string, int> bsi;
+    bsi.insert("one", 1);
+    cout << (bsi.is_bst_by_data() ? "true" : "false") << '\n';
+    bsi.insert("five", 5);
+    cout << (bsi.is_bst_by_data() ? "true" : "false") << '\n';
+    bsi.insert("eight", 8);
+    bsi.insert("three", 3);
+    bsi.insert("two", 2);
+    bsi.insert("four", 4);
+    cout << bsi << (bsi.is_bst_by_data() ? "true" : "false") << '\n';
 }
