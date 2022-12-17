@@ -276,7 +276,7 @@ void bst<K, D>::_wrapper(ostream& o) const
             for (int i = 0; i < cur_height; i++)
                 o << "    ";
             o << cur->key << ", " << cur->data << '\n';
-            if((cur->left != nullptr && cur->right == nullptr) || (cur->left == nullptr && cur->right != nullptr)) {
+            if(cur->left == nullptr && cur->right != nullptr) {
                 for (int i = 0; i < cur_height + 1; i++)
                     o << "    ";
                 cout << "nil\n";
@@ -287,6 +287,11 @@ void bst<K, D>::_wrapper(ostream& o) const
         }
         else
         {
+            if(s.top().first->left != nullptr && s.top().first->right == nullptr) {
+                for (int i = 0; i < s.top().second + 1; i++)
+                    o << "    ";
+                cout << "nil\n";
+            }
             cur = s.top().first->right;
             cur_height = s.top().second + 1;
             //delete s.top();
@@ -328,138 +333,6 @@ bool bst<K, D>::is_bst_by_data() const
     }
     return is_bst;
 }
-
-class matrix
-{
-    std::vector<std::vector<double>> m;
-public:
-    matrix() {};
-    matrix(size_t rows, size_t cols) { m.assign(rows, std::vector<double>(cols)); }
-    matrix(size_t n) { m.assign(n, std::vector<double>(n)); }
-    matrix(const std::vector<double>& diag);
-    static matrix unit_matrix(size_t n);
-    const std::vector<double>& operator[](size_t row) const;
-    std::vector<double>& operator[](size_t row);
-    size_t rows() const { return m.size(); }
-    size_t cols() const { return m.size() ? m[0].size() : 0; }
-    size_t size() const { return m.size(); }
-    matrix operator+(const matrix& arg2) const;
-    matrix operator-(const matrix& arg2) const;
-    matrix operator*(const matrix& arg2) const;
-    matrix operator^(int n) const;
-    matrix transpose() const;
-    matrix inverse() const;
-    double det() const;
-    void generate(std::function<double(int, int)> gen);
-    friend ostream& operator<<(ostream& o, const matrix& M);
-};
-
-double matrix::det() const
-{
-    if (cols() != rows())
-        throw std::string("Row's count and column's count are distinct");
-    matrix M{ *this };
-    double result = 1;
-    size_t n = M.size();
-    for (int i = 0; i < n; ++i)
-    {
-        /*if (abs(M[i][i]) <= 1e-8) {
-            swap(M[i], *find_if(M.m.begin() + i, M.m.end(), [&i](const vector<double>& v) -> bool { return abs(v[i]) > 1e-8; }));
-        }*/
-        double mii = M[i][i];
-        std::transform(M[i].begin() + i, M[i].end(), M[i].begin() + i,
-            [&mii](auto el) {return el / mii; });
-        for (int j = i + 1; j < n; ++j)
-        {
-            double mji = M[j][i];
-            std::transform(M[i].begin() + i, M[i].end(), M[j].begin() + i,
-                M[j].begin() + i, [&mji](auto a, auto b) {return b - mji * a; });
-        }
-        result *= mii;
-    }
-    return result;
-}
-
-matrix matrix::inverse() const
-{
-    if (cols() != rows())
-        throw std::string("Row's count and column's count are distinct");
-    matrix M{ *this };
-    size_t n = M.size();
-    for (int i = 0; i < n; i++) {
-        M[i].resize(n * 2, 0);
-        M[i][n + i] = 1;
-    }
-    int zz = 0;
-    for (int i = 0; i < n; ++i)
-    {
-        if (abs(M[i][i]) <= 1e-8) {
-            swap(M[i], *find_if(M.m.begin() + i, M.m.end(), [&i](const vector<double>& v) -> bool { return abs(v[i]) > 1e-8; }));
-        }
-        double mii = M[i][i];
-        std::transform(M[i].begin(), M[i].end(), M[i].begin(),
-            [&mii](auto el) {return el / mii; });
-        for (int j = 0; j < n; ++j)
-        {
-            if (j == i)
-                continue;
-            double mji = M[j][i];
-            std::transform(M[i].begin(), M[i].end(), M[j].begin(),
-                M[j].begin(), [&mji](auto a, auto b) {return b - mji * a; });
-        }
-    }
-    int z = 0;
-    for (int i = 0; i < n; i++) {
-        move(M[i].begin() + n, M[i].end(), M[i].begin());
-        M[i].resize(n);
-    }
-    return M;
-}
-
-void matrix::generate(std::function<double(int, int)> gen)
-{
-    for (size_t i = 0; i < rows(); i++)
-    {
-        for (size_t j = 0; j < cols(); j++)
-        {
-            m[i][j] = gen(i, j);
-        }
-    }
-}
-
-matrix::matrix(const std::vector<double>& diag)
-{
-    m.assign(diag.size(), std::vector<double>(diag.size()));
-    for (size_t i = 0; i < diag.size(); i++)
-    {
-        m[i][i] = diag[i];
-    }
-}
-
-matrix matrix::unit_matrix(size_t n)
-{
-    return matrix(std::vector<double>(n, 1));
-}
-
-const std::vector<double>& matrix::operator[](size_t row) const
-{
-    return m[row];
-}
-
-std::vector<double>& matrix::operator[](size_t row)
-{
-    return m[row];
-}
-
-ostream& operator<<(ostream& o, const matrix& M) {
-    for (auto& v : M.m) {
-        for (auto& a : v)
-            o << a << ' ';
-        o << '\n';
-    }
-    return o;
-}
-
 
 typedef vector<vector<int>> graph;
 
@@ -541,7 +414,7 @@ int main() {
     cout << (bsi.is_bst_by_data() ? "true" : "false") << '\n';
     bsi.insert("eight", 8);
     bsi.insert("three", 3);
-    bsi.insert("two", 2);
+    bsi.insert("tao", 2);
     bsi.insert("four", 4);
     cout << bsi << (bsi.is_bst_by_data() ? "true" : "false") << '\n';
 }
